@@ -1,0 +1,41 @@
+services:
+  odoo-backend:
+    build: 
+      context: ./odoo
+      dockerfile: ./Dockerfile.prod
+    container_name: odoo-backend-api-services
+    ports:
+      - 8000:8000
+    environment:
+      - REDIS_HOST=redis://odoo-redis:6379/0
+    volumes:
+      - odoo-server:/app/odoo
+    depends_on:
+      - odoo-redis
+    command: sh run.sh
+
+  odoo-celery:
+    build: ./odoo
+    container_name: odoo-celery
+    command: celery -A odoo worker --loglevel=INFO
+    depends_on:
+      - odoo-redis
+    environment:
+      - REDIS_HOST=redis://odoo-redis:6379/0
+
+  odoo-celery-beat:
+    build: ./odoo
+    container_name: odoo-celery-beat
+    command: celery -A odoo beat --loglevel=INFO
+    depends_on:
+      - odoo-redis
+    environment:
+      - REDIS_HOST=redis://odoo-redis:6379/0
+
+  odoo-redis:
+    image: redis:latest
+    container_name: odoo-redis
+
+
+volumes:
+  odoo-server:
